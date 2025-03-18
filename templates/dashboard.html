@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        .btn-microphone {
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        #status-message {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard</h1>
+        <p>Welcome, {{ user.full_name }}!</p>
+        <p>Account Number: {{ user.account_number }}</p>
+        <p>Pan Number: {{user.pan_number}}</p>
+        <p>Phone Number: {{user.mobile_number}}</p>
+        <p>Email: {{user.email}}</p>
+
+        <button id="microphone-btn" class="btn btn-primary btn-microphone">
+            🎤
+        </button>
+        <p id="status-message" class="text-center"></p>
+    </div>
+
+   <script>
+    const microphoneBtn = document.getElementById('microphone-btn');
+const statusMessage = document.getElementById('status-message');
+
+// Check if the browser supports the Web Speech API
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognition) {
+    statusMessage.textContent = "Your browser does not support speech recognition.";
+    microphoneBtn.disabled = true;
+} else {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US'; // Set language
+    recognition.interimResults = false; // Only final results
+    recognition.maxAlternatives = 1; // Only one result
+
+    microphoneBtn.addEventListener('click', () => {
+        statusMessage.textContent = "Listening... Please speak your banking query.";
+        recognition.start(); // Start listening
+    });
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript; // Get the recognized text
+        statusMessage.textContent = `You said: "${transcript}"`;
+
+        // Send the transcript to the Flask backend
+        fetch('/process-query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: transcript, account_number: "{{ user.account_number }}" })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Redirect to the appropriate page
+                window.location.href = data.redirect_url;
+            } else {
+                // Display an alert for duplicate tickets or other errors
+                alert(data.message);  // Show the error message to the user
+                statusMessage.textContent = "Error: " + data.message;
+            }
+        })
+        .catch(error => {
+            statusMessage.textContent = "An error occurred. Please try again.";
+            console.error(error);
+        });
+    };
+
+    recognition.onerror = (event) => {
+        statusMessage.textContent = "Error: " + event.error;
+    };
+
+    recognition.onspeechend = () => {
+        recognition.stop(); // Stop listening after speech ends
+    };
+}
+</script>
+</body>
+</html>

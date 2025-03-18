@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio to Text Conversion</title>
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h4 class="title">🎙 Speak your request</h4>
+        <div id="status" class="status"></div>
+        <button id="start-recording" class="btn">🎤 Start Recording</button>
+        <p id="result" class="result"></p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const startButton = document.getElementById("start-recording");
+            const statusDiv = document.getElementById("status");
+            const resultParagraph = document.getElementById("result");
+
+            // Get the account number from the URL query parameter and decode it
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedAccountNumber = urlParams.get("account_number");
+            const accountNumber = encodedAccountNumber ? decodeURIComponent(encodedAccountNumber) : null;
+
+            let isRecording = false;
+
+            startButton.addEventListener("click", startRecognition);
+
+            function startRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+                if (!SpeechRecognition) {
+                    alert("⚠ Speech Recognition is not supported in this browser.");
+                    return;
+                }
+
+                const recognition = new SpeechRecognition();
+                recognition.lang = "en-US";
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = () => {
+                    console.log("🎙 Recording started...");
+                    isRecording = true;
+                    updateStatus();
+                };
+
+                recognition.onresult = (event) => {
+                    if (event.results && event.results.length > 0) {
+                        const transcript = event.results[0][0].transcript;
+                        console.log("✅ Recognized:", transcript);
+                        resultParagraph.textContent = `🗣 You said: ${transcript}`;
+
+                        // Process the intent and redirect if necessary
+                        processIntent(transcript, accountNumber);
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("❌ Speech Recognition Error:", event);
+                    alert("Speech recognition error. Please try again.");
+                };
+
+                recognition.onend = () => {
+                    console.log("🎤 Recording stopped.");
+                    isRecording = false;
+                    updateStatus();
+                };
+
+                recognition.start();
+            }
+
+            function updateStatus() {
+                if (isRecording) {
+                    statusDiv.innerHTML = `<span class="dot"></span>Recording...`;
+                } else {
+                    statusDiv.innerHTML = "";
+                }
+            }
+
+            function processIntent(text, accountNumber) {
+                // Convert text to lowercase for easier matching
+                const lowerText = text.toLowerCase();
+
+                // Define keywords to look for
+                const keywords = ["loan", "fd", "credit score", "account"];
+
+                // Check if any keyword is present in the text
+                const matchedKeyword = keywords.find(keyword => lowerText.includes(keyword));
+
+                if (matchedKeyword) {
+                    // Redirect to a specific page based on the matched keyword
+                    switch (matchedKeyword) {
+                        case "loan":
+                            window.location.href = `/loan?account_number=${encodeURIComponent(accountNumber)}`;
+                            break;
+                        case "fd":
+                            window.location.href = `/fd?account_number=${encodeURIComponent(accountNumber)}`;
+                            break;
+                        case "credit score":
+                            window.location.href = `/credit-score?account_number=${encodeURIComponent(accountNumber)}`;
+                            break;
+                        case "account":
+                            window.location.href = `/account?account_number=${encodeURIComponent(accountNumber)}`;
+                            break;
+                        default:
+                            // If no specific page is found, redirect to a generic page
+                            window.location.href = `/generic?account_number=${encodeURIComponent(accountNumber)}`;
+                            break;
+                    }
+                } else {
+                    // If no keyword is matched, display a message
+                    resultParagraph.textContent = "🤖 No matching intent found.";
+                }
+            }
+        });
+    </script>
+</body>
+</html>

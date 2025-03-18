@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Authentication</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+            width: 90%;
+            max-width: 500px;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            padding: 12px 24px;
+            font-size: 1rem;
+            color: white;
+            background: #333;
+            border: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+        #camera-container {
+            margin-top: 30px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        #camera-feed {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 2px solid #333;
+        }
+        #registration-form, #create-account-form {
+            display: none;
+            margin-top: 20px;
+        }
+        #registration-form input, #create-account-form input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #333;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Authentication</h1>
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        <div id="main-content">
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <button id="login-btn" class="btn btn-custom">Login</button>
+                <button id="register-face-btn" class="btn btn-custom">Register Face</button>
+                <button id="create-account-btn" class="btn btn-custom">Create Account</button>
+            </div>
+            <div id="camera-container">
+                <video id="camera-feed" autoplay></video>
+                <button id="capture-btn" class="btn btn-custom">Capture</button>
+            </div>
+            <div id="registration-form">
+                <input type="text" id="account-number-input" placeholder="Enter your account number">
+                <button id="submit-registration" class="btn btn-custom">Register Face</button>
+            </div>
+            <div id="create-account-form">
+                <input type="text" id="name-input" placeholder="Full Name">
+                <input type="email" id="email-input" placeholder="Email">
+                <input type="text" id="phone-input" placeholder="Phone Number">
+                <input type="text" id="new-pan-number-input" placeholder="PAN Number">
+                <input type="text" id="new-aadhaar-number-input" placeholder="Aadhaar Number">
+                <button id="submit-create-account" class="btn btn-custom">Create Account</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const loginBtn = document.getElementById('login-btn');
+        const registerFaceBtn = document.getElementById('register-face-btn');
+        const createAccountBtn = document.getElementById('create-account-btn');
+        const cameraFeed = document.getElementById('camera-feed');
+        const captureBtn = document.getElementById('capture-btn');
+        const cameraContainer = document.getElementById('camera-container');
+        const registrationForm = document.getElementById('registration-form');
+        const createAccountForm = document.getElementById('create-account-form');
+        const accountNumberInput = document.getElementById('account-number-input');
+        const submitRegistrationBtn = document.getElementById('submit-registration');
+        const submitCreateAccountBtn = document.getElementById('submit-create-account');
+        const loading = document.getElementById('loading');
+        const mainContent = document.getElementById('main-content');
+        let stream;
+
+        // Show loading spinner and hide main content
+        function showLoading() {
+            loading.style.display = 'block';
+            mainContent.style.display = 'none';
+        }
+
+        // Hide loading spinner and show main content
+        function hideLoading() {
+            loading.style.display = 'none';
+            mainContent.style.display = 'block';
+        }
+
+        // Start the camera
+        async function startCamera() {
+            try {
+                showLoading(); // Show loading spinner
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraFeed.srcObject = stream;
+                cameraContainer.style.display = 'flex';
+                hideLoading(); // Hide loading spinner
+            } catch (err) {
+                hideLoading(); // Hide loading spinner
+                alert('Error accessing camera: ' + err.message);
+            }
+        }
+
+        // Stop the camera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                cameraFeed.srcObject = null;
+                cameraContainer.style.display = 'none';
+            }
+        }
+
+        // Capture an image from the camera feed
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraFeed.videoWidth;
+            canvas.height = cameraFeed.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 1.0); // Return the image data
+        }
+
+        // Login flow
+        // Login flow
+loginBtn.addEventListener('click', async () => {
+    await startCamera();
+    captureBtn.onclick = async () => {
+        const imageData = captureImage(); // Capture the image
+        stopCamera();
+        showLoading(); // Show loading spinner
+
+        try {
+            // Send the image to the server for login
+            const response = await fetch('/capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData.split(',')[1] }) // Send base64 image data
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Verify the face embedding
+                const verifyResponse = await fetch('/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ embedding: result.aggregated_embedding }) // Send embeddings
+                });
+                const verifyResult = await verifyResponse.json();
+
+                if (verifyResult.status === 'success') {
+                    // Redirect to dashboard with account_number
+                    window.location.href = `/dashboard?account_number=${verifyResult.account_number}`;
+                } else {
+                    hideLoading(); // Hide loading spinner
+                    alert(verifyResult.message); // Show error message
+                }
+            } else {
+                hideLoading(); // Hide loading spinner
+                alert("⚠ Error: " + result.error);
+            }
+        } catch (error) {
+            hideLoading(); // Hide loading spinner
+            alert("An error occurred during login.");
+            console.error(error);
+        }
+    };
+});
+
+        // Register Face flow
+        registerFaceBtn.addEventListener('click', async () => {
+            await startCamera();
+            captureBtn.onclick = async () => {
+                const imageData = captureImage(); // Capture the image
+                stopCamera();
+
+                // Show the registration form
+                registrationForm.style.display = 'block';
+
+                // Submit registration
+                submitRegistrationBtn.onclick = async () => {
+                    const accountNumber = accountNumberInput.value.trim();
+
+                    if (!accountNumber) {
+                        alert("Please enter your account number.");
+                        return;
+                    }
+
+                    showLoading(); // Show loading spinner
+
+                    try {
+                        // Send the image to the server for registration
+                        const response = await fetch('/register_capture', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: imageData.split(',')[1] }) // Send base64 image data
+                        });
+                        const result = await response.json();
+
+                        if (result.status === 'success') {
+                            // Send the account number and embedding to the server
+                            const registerResponse = await fetch('/register', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    account_number: accountNumber,
+                                    aggregated_embedding: result.aggregated_embedding
+                                })
+                            });
+                            const registerResult = await registerResponse.json();
+                            alert(registerResult.message);
+                            registrationForm.style.display = 'none'; // Hide the form after registration
+                        } else {
+                            alert(result.error);
+                        }
+                    } catch (error) {
+                        alert("An error occurred during registration.");
+                        console.error(error);
+                    } finally {
+                        hideLoading(); // Hide loading spinner
+                    }
+                };
+            };
+        });
+
+        // Create Account flow
+        createAccountBtn.addEventListener('click', () => {
+            createAccountForm.style.display = 'block';
+            cameraContainer.style.display = 'none';
+            registrationForm.style.display = 'none';
+        });
+
+        submitCreateAccountBtn.addEventListener('click', async () => {
+            const name = document.getElementById('name-input').value.trim();
+            const email = document.getElementById('email-input').value.trim();
+            const phone = document.getElementById('phone-input').value.trim();
+            const panNumber = document.getElementById('new-pan-number-input').value.trim();
+            const aadhaarNumber = document.getElementById('new-aadhaar-number-input').value.trim();
+
+            if (!name || !email || !phone || !panNumber || !aadhaarNumber) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Create the account
+                const response = await fetch('/create_account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, pan_number: panNumber, aadhaar_number: aadhaarNumber })
+                });
+                const result = await response.json();
+
+                console.log("Create Account Response:", result); // Debugging
+
+                if (result.status === 'success') {
+                    // Display the account number from the response
+                    const accountNumber = result.account_number;
+                    alert(`Account created successfully! You can now register your face.\nAccount Number: ${accountNumber}`);
+                    createAccountForm.style.display = 'none';
+                } else {
+                    alert("Error: " + result.message);
+                }
+            } catch (error) {
+                console.error("Error during account creation:", error); // Debugging
+                alert("An error occurred during account creation.");
+            } finally {
+                hideLoading();
+            }
+        });
+    </script>
+</body>
+</html>

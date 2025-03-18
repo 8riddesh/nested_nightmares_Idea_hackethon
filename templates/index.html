@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .camera-feed {
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px 24px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Recognition System</h1>
+        <p>Capture your face and verify your Aadhaar number.</p>
+        <div class="camera-feed">
+            <video id="video" width="640" height="480" autoplay></video>
+            <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+        </div>
+        <button class="button" onclick="captureImage()">Capture</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const resultDiv = document.getElementById('result');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing the camera:', err);
+            });
+
+        function captureImage() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 640, 480);
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.png');
+
+                fetch('/capture', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        resultDiv.innerHTML = '<p>Face captured successfully!</p>';
+                        verifyAadhaar(data.embedding);
+                    } else {
+                        resultDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }, 'image/png');
+        }
+
+        function verifyAadhaar(embedding) {
+            const aadhaarNumber = prompt("Enter your Aadhaar number:");
+            if (aadhaarNumber) {
+                fetch('/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        aadhaar_number: aadhaarNumber,
+                        embedding: embedding
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        resultDiv.innerHTML += `<p>${data.message}</p>`;
+                    } else {
+                        resultDiv.innerHTML += `<p>${data.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                resultDiv.innerHTML += '<p>Please enter a valid Aadhaar number.</p>';
+            }
+        }
+    </script>
+</body>
+</html>

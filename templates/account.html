@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Page</title>
+</head>
+<body>
+    <h1>Account Page</h1>
+    <p>Welcome, {{ user.full_name }}!</p>
+    <p>Account Number: {{ user.account_number }}</p>
+    <p>Ticket Number: {{ ticket_number }}#{{user.account_number}}</p>  <!-- Display the ticket number here -->
+</body>
+</html>
