@@ -10,7 +10,7 @@
             background-color: #121212;
             color: #ffffff;
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
         }
 
@@ -21,7 +21,7 @@
 
         p {
             font-size: 18px;
-            margin: 10px 0;
+            margin: 15px 0;
         }
 
         .btn-back {
@@ -44,9 +44,9 @@
 
 <body>
     <h1>Fixed Deposit Page</h1>
-    <p>Welcome, {{ user.full_name }}!</p>
-    <p>Account Number: {{ user.account_number }}</p>
-    <p>Ticket Number: {{ ticket_number }}#{{ user.account_number }}</p>
+    <p>Welcome, <strong>{{ user.full_name }}</strong>!</p>
+    <p>Account Number: <strong>{{ user.account_number }}</strong></p>
+    <p>Ticket Number: <strong>{{ ticket_number }}#{{ user.account_number }}</strong></p>
 
     <button class="btn-back" onclick="goBack()">Go Back</button>
 

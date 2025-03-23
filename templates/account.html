@@ -1,14 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Page</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            color: #ffffff;
+        }
+
+        p {
+            font-size: 18px;
+            margin: 15px 0;
+        }
+
+        .btn-back {
+            margin-top: 30px;
+            padding: 12px 24px;
+            background-color: #ffffff;
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-back:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
 </head>
+
 <body>
     <h1>Account Page</h1>
-    <p>Welcome, {{ user.full_name }}!</p>
-    <p>Account Number: {{ user.account_number }}</p>
-    <p>Ticket Number: {{ ticket_number }}#{{user.account_number}}</p>  <!-- Display the ticket number here -->
+    <p>Welcome, <strong>{{ user.full_name }}</strong>!</p>
+    <p>Account Number: <strong>{{ user.account_number }}</strong></p>
+    <p>Ticket Number: <strong>{{ ticket_number }}#{{ user.account_number }}</strong></p>
+
+    <button class="btn-back" onclick="goBack()">Go Back</button>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+    </script>
 </body>
+
 </html>
